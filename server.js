@@ -10,13 +10,13 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb" }));
 
 app.post("/transcribe", async (req, res) => {
-  const blob = req.body;
+  const { file, dialog } = req.body;
 
   const configuration = new Configuration({
     apiKey: "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",
   });
 
-  let base64Image = blob.file.split(";base64,").pop();
+  let base64Image = file.split(";base64,").pop();
 
   fs.writeFileSync("audio.wav", base64Image, { encoding: "base64" });
   const readStream = fs.createReadStream("audio.wav");
@@ -28,7 +28,10 @@ app.post("/transcribe", async (req, res) => {
   );
   const completionResponse = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    messages: [{ role: "user", content: transcriptionResponse.data.text }],
+    messages: [
+      ...dialog,
+      { role: "user", content: transcriptionResponse.data.text },
+    ],
   });
   console.log(completionResponse.data.choices[0].message);
 

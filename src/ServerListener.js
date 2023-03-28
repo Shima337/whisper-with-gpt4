@@ -19,7 +19,12 @@ const ServerListener = () => {
       reader.onloadend = () => resolve(reader.result);
       reader.readAsDataURL(blob);
     });
-    const body = JSON.stringify({ file: base64, model: "whisper-1" });
+
+    const body = JSON.stringify({
+      file: base64,
+      dialog: dialog,
+      model: "whisper-1",
+    });
     const headers = { "Content-Type": "application/json" };
     const { default: axios } = await import("axios");
     const response = await axios.post(
@@ -31,14 +36,11 @@ const ServerListener = () => {
     );
 
     const { question, answer } = await response.data;
-    console.log("q a ", question, answer.content);
 
     setDialog((prev) => [
       ...prev,
-      {
-        question: question,
-        answer: answer.content,
-      },
+      { role: "user", content: question },
+      { role: "assistant", content: answer.content },
     ]);
 
     console.log("dialog ", dialog);
@@ -76,12 +78,12 @@ const ServerListener = () => {
         Stop
       </button>
       <div>
-        `` Your dialog:
+        Your dialog:
         {dialog.map((x, index) => {
           return (
             <div key={index}>
-              <p>You: {x.question}</p>
-              <p>AI: {x.answer} </p>
+              <p>{x.role === "user" ? "You" : "AI"}</p>
+              <p>Content: {x.content}</p>
             </div>
           );
         })}
